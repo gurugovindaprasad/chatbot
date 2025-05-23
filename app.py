@@ -155,6 +155,7 @@ class ConcurrentRAGSystem:
   """
       except Exception as e:
           print(e)
+          st.exception(e)
           response_template = "Sorry, I couldn't generate a response due to an internal error."
 
       return response_template
