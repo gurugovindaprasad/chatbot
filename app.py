@@ -154,6 +154,7 @@ class ConcurrentRAGSystem:
   **Sources:** {', '.join([doc['source'] for doc in context_docs[:2]])}
   """
       except Exception as e:
+          print(e)
           response_template = "Sorry, I couldn't generate a response due to an internal error."
 
       return response_template
