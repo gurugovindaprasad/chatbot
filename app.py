@@ -191,7 +191,7 @@ rag_system = get_rag_system()
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.title("🔧 Hipotronics Assistant")
+    st.title("Hipotronics Assistant")
     st.caption("Ask questions about OC60 and D149 issues and get relavant response")
 
 with col2:
@@ -213,11 +213,11 @@ with st.sidebar:
     if index:
         st.success(f"✅ Knowledge Base Loaded")
         st.info(f"📚 {len(chunks)} troubleshooting sections available")
-        st.info(f"👥 {len(rag_system.active_users)} active users")
     else:
         st.error("❌ Knowledge base not available")
 
-    st.markdown("Uses google/flan-t5-small")
+    st.markdown("Uses google/flan-t5-small for generation")
+    st.markdown("Uses all-MiniLM-L6-v2 for embeddings")
     st.markdown("Send precise question to get an accurate response")
 
 # Chat Interface
@@ -288,5 +288,3 @@ with col2:
         duration = datetime.now() - st.session_state.session_start
         st.metric("Session Duration", f"{duration.seconds // 60} min")
 
-with col3:
-    st.metric("Active Users", len(rag_system.active_users))
