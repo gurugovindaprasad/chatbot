@@ -217,8 +217,8 @@ with st.sidebar:
     else:
         st.error("❌ Knowledge base not available")
 
-    st.metadata("Uses google/flan-t5-small")
-    st.metadata("Send precise question to get an accurate response")
+    st.markdown("Uses google/flan-t5-small")
+    st.markdown("Send precise question to get an accurate response")
 
 # Chat Interface
 st.subheader("Ask Your Question")
