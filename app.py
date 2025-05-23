@@ -12,7 +12,7 @@ from typing import Dict, List, Any
 
 # Configure Streamlit for multi-user
 st.set_page_config(
-    page_title="Troubleshooting Guide Bot",
+    page_title="Hipotronics Bot",
     page_icon="🔧",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -145,7 +145,7 @@ class ConcurrentRAGSystem:
       _, generator = self.load_models()
 
       try:
-          result = generator(prompt, max_new_tokens=300, do_sample=False)['generated_text']
+          result = generator(prompt, max_new_tokens=300, do_sample=False)[0]['generated_text']
           print(result)
           answer = result.strip()
           print(answer)
@@ -191,8 +191,8 @@ rag_system = get_rag_system()
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.title("🔧 Troubleshooting Guide Assistant")
-    st.caption("Ask questions about technical issues and get instant help from our knowledge base")
+    st.title("🔧 Hipotronics Assistant")
+    st.caption("Ask questions about OC60 and D149 issues and get relavant response")
 
 with col2:
     # User session info
@@ -202,7 +202,6 @@ with col2:
     with st.container():
         st.subheader("Session Info")
         st.write(f"**Session:** {session_id}")
-        st.write(f"**Active Users:** {len(rag_system.active_users)}")
         st.write(f"**Your Queries:** {len(st.session_state.get('query_history', []))}")
 
 # Sidebar for system status
@@ -217,7 +216,9 @@ with st.sidebar:
         st.info(f"👥 {len(rag_system.active_users)} active users")
     else:
         st.error("❌ Knowledge base not available")
-    
+
+    st.metadata("Uses google/flan-t5-small")
+    st.metadata("Send precise question to get an accurate response")
 
 # Chat Interface
 st.subheader("Ask Your Question")
