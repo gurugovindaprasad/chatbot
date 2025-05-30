@@ -189,104 +189,19 @@ def get_rag_system():
 
 rag_system = get_rag_system()
 
-# UI Layout
-col1, col2 = st.columns([3, 1])
+def chatbot_fn(message, history):
+    # Check for repeated query
+    if rag_system.is_repeated_query(message):
+        return "You've asked a similar question recently. Please rephrase."
 
-with col1:
-    st.title("Hipotronics Assistant")
-    st.caption("Ask questions about OC60 and D149 issues and get relavant response")
+    # Search documents
+    relevant_docs = rag_system.search_documents(message)
 
-with col2:
-    # User session info
-    session_id = rag_system.get_session_info()
-    rag_system.update_active_users(session_id)
+    # Generate response
+    response = rag_system.generate_response(message, relevant_docs)
     
-    with st.container():
-        st.subheader("Session Info")
-        st.write(f"**Session:** {session_id}")
-        st.write(f"**Your Queries:** {len(st.session_state.get('query_history', []))}")
+    return response
 
-# Sidebar for system status
-with st.sidebar:
-    st.header("System Status")
-    
-    # Load knowledge base info
-    index, chunks, metadata = rag_system.load_knowledge_base()
-    if index:
-        st.success(f"✅ Knowledge Base Loaded")
-        st.info(f"📚 {len(chunks)} troubleshooting sections available")
-    else:
-        st.error("❌ Knowledge base not available")
-
-    st.markdown("Uses google/flan-t5-small for generation")
-    st.markdown("Uses all-MiniLM-L6-v2 for embeddings")
-    st.markdown("Send precise question to get an accurate response")
-
-# Chat Interface
-st.subheader("Ask Your Question")
-
-# Display chat history
-for message in st.session_state.get('messages', []):
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
-        if message["role"] == "assistant" and "sources" in message:
-            with st.expander("View Sources"):
-                for source in message["sources"]:
-                    st.write(f"**{source['source']}** (Similarity: {source['similarity']:.2f})")
-
-# Chat input
-if prompt := st.chat_input("Describe your technical issue or question..."):
-    # Check for repeated queries
-    if rag_system.is_repeated_query(prompt):
-        st.warning("You've asked a very similar question recently. Please try being more specific or ask a different question.")
-    else:
-        # Add user message
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        st.session_state.query_history.append(prompt)
-        
-        # Display user message
-        with st.chat_message("user"):
-            st.write(prompt)
-        
-        # Generate response
-        with st.chat_message("assistant"):
-            with st.spinner("Searching troubleshooting guide..."):
-                # Search for relevant documents
-                relevant_docs = rag_system.search_documents(prompt)
-                
-                # Generate response
-                response = rag_system.generate_response(prompt, relevant_docs)
-                
-                st.write(response)
-                
-                # Show sources
-                if relevant_docs:
-                    with st.expander("View Sources Used"):
-                        for i, doc in enumerate(relevant_docs):
-                            st.write(f"**Source {i+1}:** {doc['source']}")
-                            st.write(f"**Similarity:** {doc['similarity']:.2f}")
-                            st.write(f"**Preview:** {doc['content'][:200]}...")
-                            st.divider()
-        
-        # Add assistant response to chat history
-        st.session_state.messages.append({
-            "role": "assistant", 
-            "content": response,
-            "sources": relevant_docs
-        })
-        
-        # Update user activity
-        rag_system.update_active_users(session_id)
-
-# Footer with usage stats
-st.divider()
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Questions Asked", len(st.session_state.get('query_history', [])))
-
-with col2:
-    if st.session_state.get('session_start'):
-        duration = datetime.now() - st.session_state.session_start
-        st.metric("Session Duration", f"{duration.seconds // 60} min")
-
+# Launch Gradio chat interface
+chat = gr.ChatInterface(fn=chatbot_fn, title="Hipotronics Assistant")
+chat.launch()
