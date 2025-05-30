@@ -93,32 +93,46 @@ class ConcurrentRAGSystem:
             for uid in inactive_users:
                 del self.active_users[uid]
     
-    def search_documents(self, query: str, top_k: int = 3):
-        """Search for relevant troubleshooting documents"""
-        embedding_model, _ = self.load_models()
-        index, chunks, metadata = self.load_knowledge_base()
-        
-        if index is None:
-            return []
-        
-        # Create query embedding
-        query_embedding = embedding_model.encode([query])
-        
-        # Search FAISS index
-        scores, indices = index.search(query_embedding.astype('float32'), top_k)
-        print(scores)
-        # Prepare results
-        results = []
-        for score, idx in zip(scores[0], indices[0]):
-            if idx < len(chunks) and score > 0.5:  # Relevance threshold
-                results.append({
-                    'content': chunks[idx],
-                    'metadata': metadata[idx] if idx < len(metadata) else {},
-                    'similarity': float(score),
-                    'source': metadata[idx].get('source', 'Unknown') if idx < len(metadata) else 'Unknown'
-                })
-        
-        return results
+    def search_documents(self, query: str, top_k: int = 3, top_k_candidates: int = 10):
+    embedding_model, _ = self.load_models()
+    index, chunks, metadata = self.load_knowledge_base()
+    
+    if index is None:
+        return []
+
+    query_embedding = embedding_model.encode([query])
+    scores, indices = index.search(query_embedding.astype('float32'), top_k_candidates)
+
+    candidate_chunks = []
+    candidate_meta = []
+    valid_indices = []
+
+    for idx in indices[0]:
+        if idx < len(chunks):
+            candidate_chunks.append(chunks[idx])
+            candidate_meta.append(metadata[idx])
+            valid_indices.append(idx)
+
+    if not candidate_chunks:
+        return []
+
+    # Re-rank using cosine similarity
+    chunk_embeddings = embedding_model.encode(candidate_chunks)
+    similarities = cosine_similarity(query_embedding, chunk_embeddings)[0]
+    top_indices = np.argsort(similarities)[::-1][:top_k]
+
+    results = []
+    for i in top_indices:
+        idx = valid_indices[i]
+        results.append({
+            'content': chunks[idx],
+            'metadata': metadata[idx] if idx < len(metadata) else {},
+            'similarity': float(similarities[i]),
+            'source': metadata[idx].get('source', 'Unknown') if idx < len(metadata) else 'Unknown'
+        })
+
+    return results
+
     
     def generate_response(self, query: str, context_docs: List[Dict]) -> str:
       """Generate response using retrieved context"""
